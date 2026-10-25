@@ -28,7 +28,7 @@ class WorkoutController extends Controller
         $query = Workout::where('user_id', $request->user()->id)
             ->with([
                 'user:id,name,username,display_name,profile_image_path',
-                'exercises:id,title,type,is_validated',
+                'exercises:id,title,type,status',
             ])
             ->withCount('exercises');
 
@@ -379,7 +379,7 @@ class WorkoutController extends Controller
         }
 
         $types = Exercise::whereIn('id', collect($exercises)->pluck('exercise_id')->unique())
-            ->get(['id', 'title', 'type', 'is_validated', 'user_id'])
+            ->get(['id', 'title', 'type', 'status', 'user_id'])
             ->keyBy('id');
 
         foreach ($exercises as $index => $row) {
@@ -427,7 +427,7 @@ class WorkoutController extends Controller
                 // Los ejercicios pendientes nunca se muestran a terceros,
                 // aunque formen parte de un entrenamiento publicado.
                 if (! $isOwner) {
-                    $query->where('exercises.is_validated', true);
+                    $query->where('exercises.status', \App\Models\Exercise::STATUS_APPROVED);
                 }
 
                 $query->with(['category', 'methodology', 'bodyAreas', 'fundamentals']);

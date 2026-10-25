@@ -132,7 +132,7 @@ class DemoSeeder extends Seeder
         $complejo->fundamentals()->attach(array_filter([$recepcion?->id, $remate?->id, $defensaAtaque?->id]));
 
         // El catálogo de ejemplo nace ya validado y visible para todos.
-        $user->exercises()->update(['is_validated' => true]);
+        $user->exercises()->update(['status' => \App\Models\Exercise::STATUS_APPROVED]);
 
         // ---------------------------------------------------------------
         // Entrenamiento de ejemplo con los 3 bloques

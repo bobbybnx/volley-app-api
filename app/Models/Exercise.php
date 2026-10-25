@@ -29,10 +29,21 @@ class Exercise extends Model
         self::TYPE_TECHNICAL => 'main',
     ];
 
+    public const STATUS_PENDING = 'pending';
+    public const STATUS_APPROVED = 'approved';
+    public const STATUS_REJECTED = 'rejected';
+
+    public const STATUSES = [
+        self::STATUS_PENDING,
+        self::STATUS_APPROVED,
+        self::STATUS_REJECTED,
+    ];
+
     protected $fillable = [
         'user_id',
         'title',
         'type',
+        'status',
         'description',
         'image_path',
         'category_id',
@@ -41,14 +52,12 @@ class Exercise extends Model
         'default_time_seconds',
         'default_series',
         'methodology_id',
-        'is_validated',
     ];
 
     protected $casts = [
         'default_reps' => 'integer',
         'default_time_seconds' => 'integer',
         'default_series' => 'integer',
-        'is_validated' => 'boolean',
     ];
 
     /**
@@ -120,19 +129,25 @@ class Exercise extends Model
         return $type ? $query->where('type', $type) : $query;
     }
 
-    public function scopeValidated($query)
+    public function scopeApproved($query)
     {
-        return $query->where('is_validated', true);
+        return $query->where('status', self::STATUS_APPROVED);
     }
 
-    /**
-     * Catálogo visible: los ejercicios validados son globales y cada entrenador
-     * ve además los suyos pendientes de validación.
-     */
+    public function scopePending($query)
+    {
+        return $query->where('status', self::STATUS_PENDING);
+    }
+
+    public function scopeRejected($query)
+    {
+        return $query->where('status', self::STATUS_REJECTED);
+    }
+
     public function scopeVisibleTo($query, ?User $user)
     {
         return $query->where(function ($query) use ($user) {
-            $query->where('is_validated', true);
+            $query->where('status', self::STATUS_APPROVED);
 
             if ($user) {
                 $query->orWhere('user_id', $user->id);
@@ -140,9 +155,24 @@ class Exercise extends Model
         });
     }
 
+    public function isApproved(): bool
+    {
+        return $this->status === self::STATUS_APPROVED;
+    }
+
+    public function isPending(): bool
+    {
+        return $this->status === self::STATUS_PENDING;
+    }
+
+    public function isRejected(): bool
+    {
+        return $this->status === self::STATUS_REJECTED;
+    }
+
     public function isVisibleTo(?User $user): bool
     {
-        if ($this->is_validated) {
+        if ($this->status === self::STATUS_APPROVED) {
             return true;
         }
 
@@ -154,12 +184,12 @@ class Exercise extends Model
     }
 
     /**
-     * Un ejercicio pendiente solo puede usarse en entrenamientos de su autor.
-     * Los administradores tampoco pueden usar pendientes ajenos.
+     * Un ejercicio pendiente/rechazado solo puede usarse en entrenamientos de su autor.
+     * Los administradores tampoco pueden usar pendientes/rechazados ajenos.
      */
     public function isUsableBy(?User $user): bool
     {
-        return $this->is_validated || ($user !== null && $this->user_id === $user->id);
+        return $this->status === self::STATUS_APPROVED || ($user !== null && $this->user_id === $user->id);
     }
 
     public function canBeDeletedBy(?User $user): bool

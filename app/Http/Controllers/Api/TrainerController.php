@@ -20,7 +20,7 @@ class TrainerController extends Controller
             ->whereNotNull('username')
             ->withCount([
                 'publicWorkouts',
-                'exercises' => fn ($q) => $q->where('is_validated', true),
+                'exercises' => fn ($q) => $q->where('status', \App\Models\Exercise::STATUS_APPROVED),
             ]);
 
         if ($request->filled('q')) {
@@ -62,7 +62,7 @@ class TrainerController extends Controller
                 'publicWorkouts',
                 'exercises' => fn ($q) => $q->when(
                     ! $isOwner,
-                    fn ($query) => $query->where('is_validated', true)
+                    fn ($query) => $query->where('status', \App\Models\Exercise::STATUS_APPROVED)
                 ),
             ]);
 
@@ -70,7 +70,7 @@ class TrainerController extends Controller
                 ->when(! $isOwner, fn ($q) => $q->where('is_public', true))
                 ->with(['exercises' => function ($query) use ($isOwner) {
                     if (! $isOwner) {
-                        $query->where('is_validated', true);
+                        $query->where('status', \App\Models\Exercise::STATUS_APPROVED);
                     }
 
                     $query->select('exercises.id', 'exercises.title', 'exercises.type');
@@ -82,7 +82,7 @@ class TrainerController extends Controller
                 $workoutQuery->withCount('exercises');
             } else {
                 $workoutQuery->withCount([
-                    'exercises' => fn ($q) => $q->where('is_validated', true),
+                    'exercises' => fn ($q) => $q->where('status', \App\Models\Exercise::STATUS_APPROVED),
                 ]);
             }
 
@@ -91,7 +91,7 @@ class TrainerController extends Controller
             $trainer->loadCount([
                 'exercises' => fn ($q) => $q->when(
                     ! $isOwner,
-                    fn ($query) => $query->where('is_validated', true)
+                    fn ($query) => $query->where('status', \App\Models\Exercise::STATUS_APPROVED)
                 ),
             ]);
             $trainer->setAttribute('public_workouts_count', 0);
@@ -121,11 +121,11 @@ class TrainerController extends Controller
             ->whereHas('user', fn ($q) => $q->where('is_private', false))
             ->with([
                 'user:id,name,username,display_name,profile_image_path',
-                'exercises' => fn ($q) => $q->where('is_validated', true)
+                'exercises' => fn ($q) => $q->where('status', \App\Models\Exercise::STATUS_APPROVED)
                     ->select('exercises.id', 'exercises.title', 'exercises.type'),
             ])
             ->withCount([
-                'exercises' => fn ($q) => $q->where('is_validated', true),
+                'exercises' => fn ($q) => $q->where('status', \App\Models\Exercise::STATUS_APPROVED),
             ])
             ->orderByDesc('date')
             ->orderByDesc('created_at')

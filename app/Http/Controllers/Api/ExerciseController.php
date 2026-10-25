@@ -96,6 +96,7 @@ class ExerciseController extends Controller
             'user_id' => $request->user()->id,
             'title' => $validated['title'],
             'type' => $type,
+            'status' => $request->user()->is_admin ? Exercise::STATUS_APPROVED : Exercise::STATUS_PENDING,
             'description' => $validated['description'],
             'image_path' => $imagePath,
             'category_id' => $type === Exercise::TYPE_TECHNICAL ? null : ($validated['category_id'] ?? null),
@@ -104,8 +105,6 @@ class ExerciseController extends Controller
             'default_time_seconds' => $type === Exercise::TYPE_TECHNICAL ? null : ($validated['default_time_seconds'] ?? null),
             'default_series' => $type === Exercise::TYPE_TECHNICAL ? null : ($validated['default_series'] ?? null),
             'methodology_id' => $type === Exercise::TYPE_TECHNICAL ? ($validated['methodology_id'] ?? null) : null,
-            // Los administradores publican directamente; el resto queda pendiente.
-            'is_validated' => $request->user()->is_admin,
         ]);
 
         if (! empty($validated['body_areas']) && $type !== Exercise::TYPE_TECHNICAL) {
@@ -123,7 +122,7 @@ class ExerciseController extends Controller
     {
         if (! $exercise->isVisibleTo($request->user())) {
             return response()->json([
-                'message' => 'Este ejercicio todavía no ha sido validado por un administrador.',
+                'message' => 'Este ejercicio no está disponible en el catálogo global.',
             ], 403);
         }
 
